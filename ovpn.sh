@@ -339,6 +339,83 @@ uninstallovpn(){
 fastexit(){
 	exit
 }
+checkdeletetime(){
+		if [[ ! -e /etc/openvpn/server/dayslast.csv ]]; then
+			clear
+			echo -e "Нет настроенных клиентов."
+		else
+			clear
+			echo -e "Клиенты с настроенным автоудалением:"
+			cat /etc/openvpn/server/dayslast.csv | cut -d ',' -f 1 | nl -s ')'
+			read -p "Клиент: " client_number
+			client=$(cat /etc/openvpn/server/dayslast.csv | cut -d ',' -f 1 | sed -n "$client_number"p)
+			{
+			cat "/etc/openvpn/server/dayslast.csv" | grep $client
+			} > "/etc/openvpn/server/dayslast1.csv"
+			checkonempty=$(cat "/etc/openvpn/server/dayslast1.csv")
+			[[ -z ${checkonempty} ]] && checkonempty="y"
+			if [[ ${checkonempty} == [Yy] ]]; then
+				clear
+				echo -e "Клиент не настроен."
+			else
+				daytodelete=$(csvtool col 2 "/etc/openvpn/server/dayslast1.csv")
+				deletetime=$((($(date +%s)-$(date +%s --date "$daytodelete"))/(3600*24)))
+				echo -e "Клиент $client будет удален через $deletetime дней."
+				rm "/etc/openvpn/server/dayslast1.csv"
+			fi
+		fi 
+}
+confautodel(){
+			number_of_clients=$(tail -n +2 /etc/openvpn/server/easy-rsa/pki/index.txt | grep -c "^V")
+			if [[ "$number_of_clients" = 0 ]]; then
+				echo
+				echo "Клиенты отсутсвуют, кого вы хотите удалить?!"
+				exit
+			fi
+			echo
+			clear
+			echo "Клиент, подлежащий настройке:"
+			tail -n +2 /etc/openvpn/server/easy-rsa/pki/index.txt | grep "^V" | cut -d '=' -f 2 | nl -s ') '
+			read -p "Клиент: " client_number
+			until [[ "$client_number" =~ ^[0-9]+$ && "$client_number" -le "$number_of_clients" ]]; do
+				echo "$client_number: ввод неверен."
+				read -p "Клиент: " client_number
+			done
+			client=$(tail -n +2 /etc/openvpn/server/easy-rsa/pki/index.txt | grep "^V" | cut -d '=' -f 2 | sed -n "$client_number"p)
+			echo
+			clear
+			echo -e "${Info}Настройка автоудаления пользователя $client"
+			read -e -p "Хотите настроить автоудаление пользователя?(Y/n):" delcfgyn
+			[[ -z ${delcfgyn} ]] && delcfgyn="Nn"
+			if [[ ${delcfgyn} == [Nn] ]]; then
+				exit
+			elif [[ ${delcfgyn} == [Yy] ]]; then
+				apt install at
+				sudo systemctl enable --now atd
+				clear
+				read -e -p "Введите период удаления в днях:" periodofdel
+				at now +$periodofdel days <<ENDMARKER
+cd /etc/openvpn/server/easy-rsa/
+./easyrsa --batch revoke $client
+EASYRSA_CRL_DAYS=3650 ./easyrsa gen-crl
+rm -f /etc/openvpn/server/crl.pem
+cp /etc/openvpn/server/easy-rsa/pki/crl.pem /etc/openvpn/server/crl.pem
+chown nobody:"$group_name" /etc/openvpn/server/crl.pem
+echo
+rm "/root/$client.ovpn"
+sed -i "/$client,/d" /etc/openvpn/server/dayslast.csv  
+ENDMARKER
+				clear
+				echo -e "Пользователь ${Green_font_prefix}$client${Font_color_suffix} будет удален через $periodofdel дней."
+				future=$(date --date="$periodofdel days" +"%b %d %Y")
+				if [[ ! -e /etc/openvpn/server/dayslast.csv ]]; then
+					echo "$client,$future" > "/etc/openvpn/server/dayslast.csv"
+				else
+					echo "$client,$future" >> "/etc/openvpn/server/dayslast.csv"
+				fi
+				echo -e "А именно в $future"
+			fi
+}
 new_client () {
 	# Generates the custom client.ovpn
 	{
@@ -714,9 +791,12 @@ echo -e "Всего подключенных пользователей:" $numbe
   ${Green_font_prefix}6.${Font_color_suffix} Загрузить базу по ссылке
  ———————————— 
   ${Green_font_prefix}7.${Font_color_suffix} Удалить OpenVPN
-  ${Green_font_prefix}8.${Font_color_suffix} Выйти"
+  ${Green_font_prefix}8.${Font_color_suffix} Выйти
+ ———————————— 
+  ${Green_font_prefix}9.${Font_color_suffix} Просмотреть оставшиеся дни у клиентов
+  ${Green_font_prefix}10.${Font_color_suffix} Настроить автоудаление"
 	read -p "Действие: " option
-	until [[ "$option" =~ ^[1-8]$ ]]; do
+	until [[ "$option" =~ ^[0-9]+$ ]]; do
 		echo "$option: выбор неверный."
 		read -p "Действие: " option
 	done
@@ -744,5 +824,11 @@ echo -e "Всего подключенных пользователей:" $numbe
 		;;
 		8)
 		fastexit
+		;;
+		9)
+		checkdeletetime
+		;;
+		10)
+		confautodel
 	esac
 fi

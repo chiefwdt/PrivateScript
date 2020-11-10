@@ -95,12 +95,6 @@ adduser(){
 	echo
 	echo "$client добавлен. Конфигурация доступна в:" ~/"$client.ovpn"
 	linktofile="$(curl -F "file=@/root/$client.ovpn" "https://file.io")"
-	clear
-	echo
-	echo
-	echo
-	echo
-	echo
 	echo -e "$linktofile - ссылка  на конфигурационный файл клиента $client" && echo
 	echo -e "Что хотите сделать?
 ${Green_font_prefix}1.${Font_color_suffix} Продолжить добавление пользователей
@@ -768,7 +762,6 @@ verb 3" > /etc/openvpn/server/client-common.txt
 	echo
 	echo "Конфигурация для нового клиента расположена в:" ~/"$client.ovpn" && echo
 	linktofile="$(curl -F "file=@/root/$client.ovpn" "https://file.io")"
-	clear
 	echo -e "$linktofile - ссылка  на конфигурационный файл клиента $client" && echo
 	echo "Для добавления новых клиентов, перезапустите скрипт."
 else
@@ -776,7 +769,9 @@ else
 	clear
 	number_of_clients=$(tail -n +2 /etc/openvpn/server/easy-rsa/pki/index.txt | grep -c "^V")
 	number_of_active=$(cat /var/log/openvpn/openvpn-status.log | grep CLIENT_LIST | tail -n +2 | grep -c CLIENT_LIST)
-	echo -e "Chieftain OpenVPN user control"
+	echo
+	echo
+	echo  -e " ${Green_background_prefix}Chieftain OpenVpn USER CONTROL${Font_color_suffix} "
 	echo
 echo -e "Приветствую, администратор сервера!  Дата: $(date +"%d-%m-%Y")
   Всего пользователей на сервере:" $number_of_clients

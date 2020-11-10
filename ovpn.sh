@@ -1,8 +1,6 @@
 #!/bin/bash
 #
 # https://github.com/Nyr/openvpn-install
-#
-# Upgrade by xyl1gun4eg
 # Copyright (c) 2013 Nyr. Released under the MIT License.
 
 Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Font_color_suffix="\033[0m"
@@ -96,6 +94,10 @@ adduser(){
 	echo "$client добавлен. Конфигурация доступна в:" ~/"$client.ovpn"
 	linktofile="$(curl -F "file=@/root/$client.ovpn" "https://file.io")"
 	clear
+  echo "----------------------------------"
+  echo "------------------------"
+  echo "----------------"
+  echo "----------"
 	echo -e "$linktofile - ссылка  на конфигурационный файл клиента $client" && echo
 	echo -e "Что хотите сделать?
 ${Green_font_prefix}1.${Font_color_suffix} Продолжить добавление пользователей
@@ -437,8 +439,7 @@ new_client () {
 if [[ ! -e /etc/openvpn/server/server.conf ]]; then
 	apt install at
 	clear
-	echo 'Добро пожаловать в скрипт установки OpenVPN! 
-	Credits: tg:@xyl1gun4eg'
+	echo 'Добро пожаловать в скрипт установки OpenVPN!'
 	# If system has a single IPv4, it is selected automatically. Else, ask the user
 	if [[ $(ip -4 addr | grep inet | grep -vEc '127(\.[0-9]{1,3}){3}') -eq 1 ]]; then
 		ip=$(ip -4 addr | grep inet | grep -vE '127(\.[0-9]{1,3}){3}' | cut -d '/' -f 1 | grep -oE '[0-9]{1,3}(\.[0-9]{1,3}){3}')
@@ -460,15 +461,10 @@ if [[ ! -e /etc/openvpn/server/server.conf ]]; then
 		echo
 		echo "Проблемы с NAT сервера, введите ip вручную, если скрипт не сможет обнаружить его"
 		# Get public IP and sanitize with grep
+			echo "Введите Публичный IPv4-адрес / Имя хоста?"
+		# Get public IP and sanitize with grep
 		get_public_ip=$(grep -m 1 -oE '^[0-9]{1,3}(\.[0-9]{1,3}){3}$' <<< "$(wget -T 10 -t 1 -4qO- "http://ip1.dynupdate.no-ip.com/" || curl -m 10 -4Ls "http://ip1.dynupdate.no-ip.com/")")
-		read -p "IP адрес [$get_public_ip]: " public_ip
-		# If the checkip service is unavailable and user didn't provide input, ask again
-		until [[ -n "$get_public_ip" || -n "$public_ip" ]]; do
-			echo "Повторите ввод."
-			read -p "IP адрес: " public_ip
-		done
-		[[ -z "$public_ip" ]] && public_ip="$get_public_ip"
-	fi
+		read -p "Публичный IPv4-адрес / Имя хоста [$get_public_ip]: " public_ip
 	# If system has a single IPv6, it is selected automatically
 	if [[ $(ip -6 addr | grep -c 'inet6 [23]') -eq 1 ]]; then
 		ip6=$(ip -6 addr | grep 'inet6 [23]' | cut -d '/' -f 1 | grep -oE '([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}')
@@ -489,7 +485,7 @@ if [[ ! -e /etc/openvpn/server/server.conf ]]; then
 	fi
 	echo
 	echo "Какой протокол OpenVPN использовать?"
-	echo "   1) UDP (ЕСЛИ ПРОБЛЕМЫ С SHADOWSOCKS ТО ВЫБЕРИТЕ ЭТОТ!!!!!)"
+	echo "   1) UDP"
 	echo "   2) TCP"
 	read -p "Протокол [По умолчанию: UDP]: " protocol
 	until [[ -z "$protocol" || "$protocol" =~ ^[12]$ ]]; do
@@ -506,12 +502,12 @@ if [[ ! -e /etc/openvpn/server/server.conf ]]; then
 	esac
 	echo
 	echo "Выберите порт для OpenVPN"
-	read -p "Порт [По умолчанию: 1194]: " port
+	read -p "Порт [По умолчанию: 23567]: " port
 	until [[ -z "$port" || "$port" =~ ^[0-9]+$ && "$port" -le 65535 ]]; do
 		echo "$port: ввод неверен."
-		read -p "Порт [По умолчанию: 1194]: " port
+		read -p "Порт [По умолчанию: 23567]: " port
 	done
-	[[ -z "$port" ]] && port="1194"
+	[[ -z "$port" ]] && port="23567"
 	echo
 	echo "Выберите DNS сервер для клиентов (Рекомендация: 1ый):"
 	echo "   1) Текущий DNS сервер"
@@ -772,8 +768,7 @@ else
 	clear
 	number_of_clients=$(tail -n +2 /etc/openvpn/server/easy-rsa/pki/index.txt | grep -c "^V")
 	number_of_active=$(cat /var/log/openvpn/openvpn-status.log | grep CLIENT_LIST | tail -n +2 | grep -c CLIENT_LIST)
-	echo -e "Скрипт установки и модерации сервера OpenVPN ${Red_font_prefix}[v${sh_ver}]${Font_color_suffix}
-	---- xyl1gun4eg|tg:@xyl1gun4eg|jb:xyl1gun4eg@jabbim.com ----"
+	echo -e "Chieftain OpenVPN user control"
 	echo
 echo -e "Приветствую, администратор сервера!  Дата: $(date +"%d-%m-%Y")
   Всего пользователей на сервере:" $number_of_clients
@@ -783,16 +778,12 @@ echo -e "Всего подключенных пользователей:" $numbe
   Выберите действие:
   ${Green_font_prefix}1.${Font_color_suffix} Добавить клиента
   ${Green_font_prefix}2.${Font_color_suffix} Удалить клиента
- ———————————— 
   ${Green_font_prefix}3.${Font_color_suffix} Получить список пользователей
   ${Green_font_prefix}4.${Font_color_suffix} Получить ссылки на конфигурации
- ———————————— 
   ${Green_font_prefix}5.${Font_color_suffix} Выгрузить базу
   ${Green_font_prefix}6.${Font_color_suffix} Загрузить базу по ссылке
- ———————————— 
   ${Green_font_prefix}7.${Font_color_suffix} Удалить OpenVPN
-  ${Green_font_prefix}8.${Font_color_suffix} Выйти
- ———————————— 
+  ${Green_font_prefix}8.${Font_color_suffix} Выйти 
   ${Green_font_prefix}9.${Font_color_suffix} Просмотреть оставшиеся дни у клиентов
   ${Green_font_prefix}10.${Font_color_suffix} Настроить автоудаление"
 	read -p "Действие: " option

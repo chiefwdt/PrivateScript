@@ -95,6 +95,14 @@ adduser(){
 	echo
 	echo "$client добавлен. Конфигурация доступна в:" ~/"$client.ovpn"
 	linktofile="$(curl -F "file=@/root/$client.ovpn" "https://file.io")"
+	clear
+	echo "$--------------------------------"
+	echo "$-------------------------"
+	echo "$----------------"
+	echo "$---------"
+	echo "$----------------"
+	echo "$-------------------------"
+	echo "$--------------------------------"
 	echo -e "$linktofile - ссылка  на конфигурационный файл клиента $client" && echo
 	echo -e "Что хотите сделать?
 ${Green_font_prefix}1.${Font_color_suffix} Продолжить добавление пользователей

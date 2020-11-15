@@ -93,32 +93,16 @@ adduser(){
 	# Generates the custom client.ovpn
 	new_client
 	echo
-	echo "$client добавлен. Конфигурация доступна в:" ~/"$client.ovpn"
-	linktofile="$(curl -F "file=@/root/$client.ovpn" "https://file.io")"
-	clear
-	echo "$--------------------------------"
-	echo "$-------------------------"
-	echo "$----------------"
-	echo "$---------"
-	echo "$----------------"
-	echo "$-------------------------"
-	echo "$--------------------------------"
-	echo -e "$linktofile - ссылка  на конфигурационный файл клиента $client" && echo
-	echo -e "Что хотите сделать?
-${Green_font_prefix}1.${Font_color_suffix} Продолжить добавление пользователей
-${Green_font_prefix}2.${Font_color_suffix} Выйти"
-	read -e -p "Действие:" delyn
-	[[ -z ${delyn} ]] && delyn="1"
-	if [[ ${delyn} == [2Nn] ]]; then
-		exit
-	elif [[ ${delyn} == [1Yy] ]]; then
-		echo -e "${Info} Продолжение добавления пользователей..."
-		adduser
-	else
-		echo -e "${Info} Продолжение добавления пользователей..."
-		adduser		
-	fi
-	exit
+  linktofile="$(curl -F "file=@/root/$client.ovpn" "https://file.io")"
+	echo "--------------------------------"
+	echo "-------------------------"
+	echo "----------------"
+	echo "---------"
+	echo -e "$linktofile - ссылка  на конфигурационный файл клиента $client"
+	echo "---------"
+	echo "----------------"
+	echo "-------------------------"
+	echo "--------------------------------"
 }
 uploadbase(){
 	echo -e "Загрузка корневого каталога OpenVPN в облако..." && echo
